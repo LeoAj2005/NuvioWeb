@@ -6,11 +6,11 @@
       "type": "web",
       "iconUri": "https://raw.githubusercontent.com/LeoAj2005/NuvioWeb/main/assets/images/icon.png",
       "manifest": {
-        "version": "6",
+        "version": "8",
         "ipkUrl": "https://github.com/LeoAj2005/NuvioWeb/releases/latest/download/NuvioTV.ipk",
-        "ipkSize": 2368404,
+        "ipkSize": 2368426,
         "ipkHash": {
-          "sha256": "0f47c2242230d307fb2e1939334e03669edfee6692d65e5d44927844540f7798"
+          "sha256": "2b7ec1c0a6cf1494763c171c659383075d38477b47cae7356e7236a679d6be00"
         }
       }
     }
