@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'webosbrew/apps.json'
   workflow_dispatch:
 
 permissions:
@@ -17,10 +19,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - name: Install dependencies
@@ -34,39 +36,70 @@ jobs:
 
       - name: Verify package exists
         run: |
-          ls -lah
+          echo "Searching for IPK..."
           find . -name "*.ipk"
 
-      # ===== NEW: Normalize IPK and update apps.json =====
       - name: Normalize package
         run: |
           FILE=$(find . -name "*.ipk" | head -1)
-          mv "$FILE" NuvioTV.ipk
-          SHA=$(sha256sum NuvioTV.ipk | cut -d' ' -f1)
-          SIZE=$(wc -c < NuvioTV.ipk)
-          sed -i "s|\"version\": \".*\"|\"version\": \"${GITHUB_RUN_NUMBER}\"|" webosbrew/apps.json
-          sed -i "s|\"ipkSize\": .*|\"ipkSize\": ${SIZE},|" webosbrew/apps.json
-          sed -i "s|\"sha256\": \".*\"|\"sha256\": \"${SHA}\"|" webosbrew/apps.json
 
-      - name: Upload IPK artifact
+          if [ -z "$FILE" ]; then
+            echo "No IPK found"
+            exit 1
+          fi
+
+          mv "$FILE" NuvioTV.ipk
+
+          SHA=$(sha256sum NuvioTV.ipk | cut -d' ' -f1)
+          SIZE=$(stat -c%s NuvioTV.ipk)
+
+          echo "SHA=$SHA" >> $GITHUB_ENV
+          echo "SIZE=$SIZE" >> $GITHUB_ENV
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: webos-ipk
-          path: NuvioTV.ipk          # fixed filename
+          path: NuvioTV.ipk
 
-      - name: Create auto release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: auto-build-${{ github.run_number }}
-          files: NuvioTV.ipk          # fixed filename
+          files: NuvioTV.ipk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ===== NEW: Commit & push the updated apps.json =====
-      - name: Push updated apps.json
+      - name: Update apps.json
+        run: |
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/auto-build-${GITHUB_RUN_NUMBER}/NuvioTV.ipk"
+
+          sed -i "s|\"version\": \".*\"|\"version\": \"${GITHUB_RUN_NUMBER}\"|" webosbrew/apps.json
+
+          sed -i "s|\"ipkUrl\": \".*\"|\"ipkUrl\": \"${URL}\"|" webosbrew/apps.json
+
+          sed -i "s|\"ipkSize\": .*|\"ipkSize\": ${SIZE},|" webosbrew/apps.json
+
+          sed -i "s|\"sha256\": \".*\"|\"sha256\": \"${SHA}\"|" webosbrew/apps.json
+
+      - name: Commit updated apps.json
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
           git add webosbrew/apps.json
-          git commit -m "Update apps.json for build ${{ github.run_number }} [skip ci]"
+
+          git commit -m "Update apps.json build ${GITHUB_RUN_NUMBER} [skip ci]" || exit 0
+
           git push
+
+      - name: Build Summary
+        run: |
+          echo "======================================"
+          echo "Build Completed Successfully"
+          echo "Build Number : ${GITHUB_RUN_NUMBER}"
+          echo "Package      : NuvioTV.ipk"
+          echo "Size         : ${SIZE} bytes"
+          echo "SHA256       : ${SHA}"
+          echo "Release Tag  : auto-build-${GITHUB_RUN_NUMBER}"
+          echo "======================================"
