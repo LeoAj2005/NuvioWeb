@@ -37,6 +37,7 @@ jobs:
           ls -lah
           find . -name "*.ipk"
 
+      # ===== NEW: Normalize IPK and update apps.json =====
       - name: Normalize package
         run: |
           FILE=$(find . -name "*.ipk" | head -1)
@@ -51,12 +52,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: webos-ipk
-          path: NuvioTV.ipk          # changed from "**/*.ipk"
+          path: NuvioTV.ipk          # fixed filename
 
       - name: Create auto release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: auto-build-${{ github.run_number }}
-          files: NuvioTV.ipk        # changed from "**/*.ipk"
+          files: NuvioTV.ipk          # fixed filename
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ===== NEW: Commit & push the updated apps.json =====
+      - name: Push updated apps.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add webosbrew/apps.json
+          git commit -m "Update apps.json for build ${{ github.run_number }} [skip ci]"
+          git push
