@@ -72,6 +72,10 @@ function bookmarkOutlineSvg() {
   `;
 }
 
+function renderWatchedBadgeGlyph(className = "library-watched-badge-svg") {
+  return `<svg viewBox="0 0 24 24" class="${className}" aria-hidden="true" focusable="false"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="currentColor"/></svg>`;
+}
+
 function isTextField(node) {
   const tagName = String(node?.tagName || "").toLowerCase();
   return tagName === "input" || tagName === "textarea" || tagName === "select";
@@ -360,7 +364,7 @@ export const LibraryScreen = {
                        data-backdrop-src="${escapeHtml(item.background || "")}"
                        data-focus-key="${escapeHtml(focusKey)}">
                 <div class="library-grid-poster${item.poster ? "" : " placeholder"}"${item.poster ? ` style="background-image:url('${escapeHtml(item.poster)}')"` : ""}>
-                  ${isWatched ? `<span class="library-watched-badge" aria-label="${escapeHtml(t("episodes_cd_watched", {}, "Watched"))}">✓</span>` : ""}
+                  ${isWatched ? `<span class="library-watched-badge" aria-label="${escapeHtml(t("episodes_cd_watched", {}, "Watched"))}">${renderWatchedBadgeGlyph()}</span>` : ""}
                 </div>
                 <div class="library-grid-title">${escapeHtml(item.name || item.id || "Untitled")}</div>
               </article>
