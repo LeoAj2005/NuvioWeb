@@ -1,0 +1,62 @@
+name: Build webOS IPK
+
+on:
+push:
+branches:
+- main
+workflow_dispatch:
+
+permissions:
+contents: write
+
+jobs:
+build-ipk:
+runs-on: ubuntu-latest
+
+```
+steps:
+  - name: Checkout repo
+    uses: actions/checkout@v4
+
+  - name: Setup Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22
+      cache: npm
+
+  - name: Install dependencies
+    run: npm ci
+
+  - name: Install webOS CLI
+    run: |
+      npm install -g @webos-tools/cli
+
+  - name: Build app
+    run: |
+      npm run build || true
+
+  - name: Package webOS app
+    run: |
+      npm run package:webos || node scripts/package-webos.mjs
+
+  - name: Find generated IPK
+    run: |
+      find . -name "*.ipk"
+
+  - name: Upload artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: webos-ipk
+      path: |
+        **/*.ipk
+
+  - name: Publish Release
+    uses: softprops/action-gh-release@v2
+    if: github.ref == 'refs/heads/main'
+    with:
+      tag_name: build-${{ github.run_number }}
+      files: |
+        **/*.ipk
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
