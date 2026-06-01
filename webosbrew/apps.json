@@ -2,7 +2,7 @@
   "packages": [
     {
       "id": "space.nuvio.webos",
-      "title": "NuvioTV",
+      "title": "NuvioTV__TEST",
       "type": "web",
       "iconUri": "https://raw.githubusercontent.com/LeoAj2005/NuvioWeb/main/assets/images/icon.png",
       "manifest": {
