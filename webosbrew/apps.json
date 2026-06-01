@@ -1,0 +1,18 @@
+{
+  "packages": [
+    {
+      "id": "space.nuvio.webos",
+      "title": "NuvioTV",
+      "type": "web",
+      "iconUri": "https://raw.githubusercontent.com/LeoAj2005/NuvioWeb/main/assets/images/icon.png",
+      "manifest": {
+        "version": "1",
+        "ipkUrl": "https://github.com/LeoAj2005/NuvioWeb/releases/latest/download/NuvioTV.ipk",
+        "ipkSize": 0,
+        "ipkHash": {
+          "sha256": ""
+        }
+      }
+    }
+  ]
+}

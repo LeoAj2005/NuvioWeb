@@ -37,16 +37,26 @@ jobs:
           ls -lah
           find . -name "*.ipk"
 
+      - name: Normalize package
+        run: |
+          FILE=$(find . -name "*.ipk" | head -1)
+          mv "$FILE" NuvioTV.ipk
+          SHA=$(sha256sum NuvioTV.ipk | cut -d' ' -f1)
+          SIZE=$(wc -c < NuvioTV.ipk)
+          sed -i "s|\"version\": \".*\"|\"version\": \"${GITHUB_RUN_NUMBER}\"|" webosbrew/apps.json
+          sed -i "s|\"ipkSize\": .*|\"ipkSize\": ${SIZE},|" webosbrew/apps.json
+          sed -i "s|\"sha256\": \".*\"|\"sha256\": \"${SHA}\"|" webosbrew/apps.json
+
       - name: Upload IPK artifact
         uses: actions/upload-artifact@v4
         with:
           name: webos-ipk
-          path: "**/*.ipk"
+          path: NuvioTV.ipk          # changed from "**/*.ipk"
 
       - name: Create auto release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: auto-build-${{ github.run_number }}
-          files: "**/*.ipk"
+          files: NuvioTV.ipk        # changed from "**/*.ipk"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
