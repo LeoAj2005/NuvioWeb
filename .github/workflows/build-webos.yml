@@ -1,56 +1,52 @@
 name: Build webOS IPK
 
 on:
-push:
-branches:
-- main
-workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
-contents: write
+  contents: write
 
 jobs:
-build-webos:
-runs-on: ubuntu-latest
+  build-webos:
+    runs-on: ubuntu-latest
 
-```
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Set up Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
-      cache: "npm"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
 
-  - name: Install dependencies
-    run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-  - name: Build project
-    run: npm run build || true
+      - name: Build project
+        run: npm run build || true
 
-  - name: Package webOS IPK
-    run: npm run package:webos
+      - name: Package webOS IPK
+        run: npm run package:webos
 
-  - name: Verify package exists
-    run: |
-      ls -lah
-      find . -name "*.ipk"
+      - name: Verify package exists
+        run: |
+          ls -lah
+          find . -name "*.ipk"
 
-  - name: Upload IPK artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: webos-ipk
-      path: |
-        **/*.ipk
+      - name: Upload IPK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webos-ipk
+          path: "**/*.ipk"
 
-  - name: Create auto release
-    uses: softprops/action-gh-release@v2
-    with:
-      tag_name: auto-build-${{ github.run_number }}
-      files: |
-        **/*.ipk
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+      - name: Create auto release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: auto-build-${{ github.run_number }}
+          files: "**/*.ipk"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
