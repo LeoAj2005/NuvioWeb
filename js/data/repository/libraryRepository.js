@@ -39,6 +39,10 @@ const REMOTE_LIST_LIMIT = 24;
 const META_TIMEOUT_MS = 2200;
 const META_BATCH_SIZE = 6;
 
+// Cache for library metadata enrichment with 5-minute TTL
+const enrichedLibraryMetaCache = new Map();
+const ENRICHED_LIBRARY_META_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
  * @typedef {'local'|'trakt'} LibrarySourceModeValue
  */
@@ -190,6 +194,57 @@ function normalizeSavedItem(item = {}) {
     addonBaseUrl: item.addonBaseUrl || null,
     updatedAt: Number(item.updatedAt || item.listedAt || Date.now())
   };
+}
+
+function toSavedItemFromTraktWatchlist(entry) {
+  if (!entry) return null;
+  const tmdbId = entry.tmdbId;
+  const itemId = tmdbId ? `tmdb:${tmdbId}` : entry.traktId ? `trakt:${entry.traktId}` : entry.imdbId ? `imdb:${entry.imdbId}` : null;
+  if (!itemId) return null;
+  const listedAtMs = entry.addedAt ? new Date(entry.addedAt).getTime() : Date.now();
+  return {
+    itemType: entry.type === "show" ? "series" : (entry.type || "movie"),
+    itemId,
+    title: entry.title || "",
+    year: entry.year || null,
+    posterUrl: "",
+    updatedAt: listedAtMs,
+    listedAt: listedAtMs
+  };
+}
+
+function getLibraryItemContentType(item) {
+  return String(item.contentType || item.itemType || item.type || "movie");
+}
+
+function getLibraryItemContentId(item) {
+  return String(item.contentId || item.itemId || item.id || "");
+}
+
+async function batchEnrichLibraryItems(items) {
+  if (!items.length) return items;
+  const now = Date.now();
+  const results = [];
+  for (const item of items) {
+    const contentType = getLibraryItemContentType(item);
+    const contentId = getLibraryItemContentId(item);
+    if (!contentId) {
+      results.push(item);
+      continue;
+    }
+    const cacheKey = `${contentType}:${contentId}`;
+    const cached = enrichedLibraryMetaCache.get(cacheKey);
+    let meta = null;
+    if (cached && (now - cached.timestamp) < ENRICHED_LIBRARY_META_CACHE_TTL_MS) {
+      meta = cached.meta;
+    } else {
+      const canonicalType = contentType === "show" ? "series" : contentType;
+      meta = await metaRepository.getMetaFromAllAddons(canonicalType, contentId).catch(() => null);
+      enrichedLibraryMetaCache.set(cacheKey, { meta, timestamp: now });
+    }
+    results.push(meta ? { ...item, enrichedMeta: meta } : item);
+  }
+  return results;
 }
 
 function toRemoteListItem(item = {}, extra = {}) {
@@ -520,7 +575,19 @@ class LibraryRepository {
   async refreshNow() {
     const sourceMode = await this.getSourceMode();
     if (sourceMode === LibrarySourceMode.TRAKT) {
-      return TraktAuthService.isAuthenticated();
+      if (!TraktAuthService.isAuthenticated()) return false;
+      try {
+        const watchlistItems = await TraktAuthService.fetchWatchlist({ limit: 200 });
+        const rawItems = watchlistItems.map(toSavedItemFromTraktWatchlist).filter(Boolean);
+        const enrichedItems = await batchEnrichLibraryItems(rawItems);
+        const state = createEmptyRemoteState();
+        state.watchlist = enrichedItems;
+        await writeRemoteState(state);
+        return true;
+      } catch (error) {
+        console.warn("[LIB] Trakt watchlist fetch failed", error);
+        return false;
+      }
     }
     if (!AuthManager.isAuthenticated) {
       return false;
