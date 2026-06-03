@@ -81,25 +81,28 @@ const APP_LANGUAGE_NATIVE_LABELS = {
   en: "English",
   el: "Greek",
   es: "Espanol",
+  "es-419": "Espanol (Latinoamerica)",
   fr: "Francais",
   he: "Hebrew",
   hi: "Hindi",
-  hu: "Magyar",
+  id: "Bahasa Indonesia",
   it: "Italiano",
   ja: "Japanese",
   lt: "Lietuviu",
   nl: "Nederlands",
   no: "Norsk",
   pl: "Polski",
-  pt: "Portugues",
+  "pt-br": "Portugues (Brasil)",
+  "pt-pt": "Portugues (Portugal)",
   ro: "Romana",
   ru: "Russian",
-  se: "Svenska",
   sk: "Slovencina",
   sl: "Slovenscina",
   sv: "Svenska",
+  ta: "Tamil",
   tr: "Turkce",
-  vi: "Tieng Viet"
+  vi: "Tieng Viet",
+  "zh-cn": "Chinese (Simplified)"
 };
 
 function appLanguageOptionLabel(localeId) {
