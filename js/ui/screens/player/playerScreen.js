@@ -1188,6 +1188,15 @@ function normalizePlayableImdbId(value = "") {
   return /^tt\d+$/i.test(candidate) ? candidate : "";
 }
 
+function normalizePlayableTmdbId(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw || /^tt\d+$/i.test(raw)) {
+    return 0;
+  }
+  const numeric = raw.replace(/^tmdb:/i, "").split(":")[0];
+  return /^\d+$/.test(numeric) ? Number(numeric) : 0;
+}
+
 function buildSkipIntervalLabel(interval = {}) {
   const type = String(interval?.type || "").trim().toLowerCase();
   if (type === "recap") {
@@ -1628,9 +1637,15 @@ export const PlayerScreen = {
       normalizePlayableImdbId(rawVideoId),
       normalizePlayableImdbId(rawItemId)
     ].find(Boolean) || "";
+    const tmdbId = [
+      normalizePlayableTmdbId(this.params?.tmdbId || this.params?.tmdb_id),
+      normalizePlayableTmdbId(rawItemId),
+      normalizePlayableTmdbId(rawVideoId)
+    ].find(Boolean) || 0;
     return {
       itemType,
       imdbId,
+      tmdbId,
       season: Number.isFinite(season) && season > 0 ? season : null,
       episode: Number.isFinite(episode) && episode > 0 ? episode : null
     };
@@ -1644,13 +1659,14 @@ export const PlayerScreen = {
       durationSec > 0 ? Math.min(100, (currentSec / durationSec) * 100) : 0;
     return {
       contentId: String(this.params?.itemId || identity.imdbId || ""),
-      contentType: identity.itemType === "series" ? "show" : "movie",
+      contentType: identity.itemType === "series" ? "series" : "movie",
       imdbId: identity.imdbId,
-      title: String(this.params?.title || ""),
-      year: Number(this.params?.year || 0) || null,
+      tmdbId: identity.tmdbId || null,
+      title: String(this.params?.playerTitle || this.params?.itemTitle || this.params?.title || ""),
+      year: Number(this.params?.playerReleaseYear || this.params?.releaseYear || this.params?.year || 0) || null,
       seasonNumber: identity.season,
       episodeNumber: identity.episode,
-      episodeTitle: String(this.params?.episodeTitle || ""),
+      episodeTitle: String(this.params?.playerEpisodeTitle || this.params?.episodeTitle || this.params?.playerSubtitle || ""),
       positionMs: Math.round(currentSec * 1000),
       durationMs: Math.round(durationSec * 1000),
       progressPercent: progress,

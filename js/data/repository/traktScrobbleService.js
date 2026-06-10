@@ -25,6 +25,9 @@ function buildMoviePayload(context) {
   if (context.imdbId) {
     ids.imdb = context.imdbId;
   }
+  if (context.tmdbId) {
+    ids.tmdb = context.tmdbId;
+  }
   if (Object.keys(ids).length) {
     movie.ids = ids;
   }
@@ -39,6 +42,9 @@ function buildEpisodePayload(context) {
   const showIds = {};
   if (context.imdbId) {
     showIds.imdb = context.imdbId;
+  }
+  if (context.tmdbId) {
+    showIds.tmdb = context.tmdbId;
   }
   if (Object.keys(showIds).length) {
     show.ids = showIds;
@@ -81,7 +87,7 @@ async function sendScrobbleRequest(action, context) {
     return;
   }
 
-  if (!context?.imdbId) {
+  if (!context?.imdbId && !context?.tmdbId) {
     return;
   }
 
